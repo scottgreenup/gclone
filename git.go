@@ -1,9 +1,9 @@
 package main
 
 import (
-	"regexp"
-
 	"github.com/pkg/errors"
+	"regexp"
+	"strings"
 )
 
 type URLType string
@@ -34,15 +34,20 @@ type GitURL struct {
 	Type URLType
 }
 
-func NewGitURL(url string) (*GitURL, error) {
-	expressions := map[URLType]*regexp.Regexp{
-		URLTypeSSH:   regexp.MustCompile(`^ssh://(.+@)?(.+)(:[0-9]+)?(/.+)+.git(/)?$`),
-		URLTypeGit:   regexp.MustCompile(`^git://(.+)(:[0-9]+)?(/.+)+.git(/|#.+)?$`),
-		URLTypeHTTP:  regexp.MustCompile(`^http(s)?://(.+)(:[0-9]+)?(/.+)+.git(/)?$`),
-		URLTypeFTP:   regexp.MustCompile(`^ftp(s)?://(.+)(:[0-9]+)?(/.+)+.git(/)?$`),
-		URLTypeSCP:   regexp.MustCompile(`^(\w+@)(.+):(.+)(/.+)*.git(/)?$`),
+var expressions map[URLType]*regexp.Regexp
+
+func init() {
+	expressions = map[URLType]*regexp.Regexp{
+		URLTypeSSH:   regexp.MustCompile(`^ssh://(.+@)?([\w\.]+)(:[0-9]+)?(/.+)+.git(/)?$`),
+		URLTypeGit:   regexp.MustCompile(`^git://([\w\.]+)(:[0-9]+)?(/.+)+.git(/|#.+)?$`),
+		URLTypeHTTP:  regexp.MustCompile(`^http(s)?://([\w]+:.+@)?([\w\.]+)(:[0-9]+)?(/.+)+.git(/)?$`),
+		URLTypeFTP:   regexp.MustCompile(`^ftp(s)?://([\w\.]+)(:[0-9]+)?(/.+)+.git(/)?$`),
+		URLTypeSCP:   regexp.MustCompile(`^(\w+@)([\w\.]+):(.+)(/.+)*.git(/)?$`),
 	}
 
+}
+
+func NewGitURL(url string) (*GitURL, error) {
 	for k, expr := range expressions {
 		if expr.MatchString(url) {
 			return &GitURL{
@@ -52,4 +57,17 @@ func NewGitURL(url string) (*GitURL, error) {
 	}
 
 	return nil, errors.New("unable to determine type of URL")
+}
+
+func parseSSH(url string) (*GitURL) {
+	r := expressions[URLTypeSSH]
+	if !r.MatchString(url) {
+		return &GitURL{}
+	}
+	matches := r.FindStringSubmatch(url)
+	return &GitURL{
+		Username: strings.TrimSuffix(matches[1], "@"),
+		Hostname: matches[2],
+		Path: matches[4],
+	}
 }

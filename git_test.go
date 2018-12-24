@@ -50,7 +50,7 @@ func TestGitURL(t *testing.T) {
 
 		for _, tc := range testcases {
 			gu, err := NewGitURL(tc)
-			require.NoError(t, err)
+			require.NoError(t, err, tc)
 			assertURLType(t, URLTypeHTTP, gu.Type, tc)
 		}
 	})
@@ -82,18 +82,54 @@ func TestGitURL(t *testing.T) {
 			"ssh://host.xz/path/to/repo.git/",
 			"ssh://host.xz/~/path/to/repo.git",
 			"ssh://host.xz/~user/path/to/repo.git/",
-			"ssh://host.xz:port/path/to/repo.git/",
+			"ssh://host.xz:7777/path/to/repo.git/",
 			"ssh://user@host.xz/path/to/repo.git/",
 			"ssh://user@host.xz/path/to/repo.git/",
 			"ssh://user@host.xz/~/path/to/repo.git",
 			"ssh://user@host.xz/~user/path/to/repo.git/",
-			"ssh://user@host.xz:port/path/to/repo.git/",
+			"ssh://user@host.xz:7777/path/to/repo.git/",
 		}
 
 		for _, tc := range testcases {
 			gu, err := NewGitURL(tc)
-			require.NoError(t, err)
+			require.NoError(t, err, tc)
 			assertURLType(t, URLTypeSSH, gu.Type, tc)
+		}
+	})
+}
+
+func TestParsing(t *testing.T) {
+
+	t.Run("ssh", func(t *testing.T) {
+
+		testcases := []struct{
+			input string
+			output GitURL
+		}{
+			{ "ssh://host.xz/path/to/repo.git/", GitURL{
+				Hostname: "host.xz",
+				Path: "/path/to/repo",
+			}},
+			//{ "ssh://host.xz/~/path/to/repo.git",
+			//{ "ssh://host.xz/~user/path/to/repo.git/",
+			//{ "ssh://host.xz:port/path/to/repo.git/",
+			{ "ssh://user@host.xz/path/to/repo.git/", GitURL{
+				Hostname: "host.xz",
+				Path:     "/path/to/repo",
+				Username: "user",
+			}},
+			//{ "ssh://user@host.xz/path/to/repo.git/",
+			//{ "ssh://user@host.xz/~/path/to/repo.git",
+			//{ "ssh://user@host.xz/~user/path/to/repo.git/",
+			//{ "ssh://user@host.xz:port/path/to/repo.git/",
+		}
+
+		for _, tc := range testcases {
+			gu := parseSSH(tc.input)
+
+			assert.Equal(t, gu.Username, tc.output.Username)
+			assert.Equal(t, gu.Hostname, tc.output.Hostname)
+			assert.Equal(t, gu.Path, tc.output.Path)
 		}
 	})
 }
