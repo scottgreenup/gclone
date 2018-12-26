@@ -98,7 +98,7 @@ func TestGitURL(t *testing.T) {
 	})
 }
 
-func TestParsing(t *testing.T) {
+func TestLegalParsing(t *testing.T) {
 
 	t.Run("ssh", func(t *testing.T) {
 
@@ -108,28 +108,92 @@ func TestParsing(t *testing.T) {
 		}{
 			{ "ssh://host.xz/path/to/repo.git/", GitURL{
 				Hostname: "host.xz",
-				Path: "/path/to/repo",
+				Path: "path/to/repo",
 			}},
-			//{ "ssh://host.xz/~/path/to/repo.git",
-			//{ "ssh://host.xz/~user/path/to/repo.git/",
-			//{ "ssh://host.xz:port/path/to/repo.git/",
+
+			// TODO what does the tilde mean?
+			{ "ssh://host.xz/~/path/to/repo.git", GitURL{
+				Hostname: "host.xz",
+				Path: "~/path/to/repo",
+			}},
+
+			// TODO what does the tilde mean?
+			{ "ssh://host.xz/~user/path/to/repo.git/", GitURL{
+				Hostname: "host.xz",
+				Path: "~user/path/to/repo",
+			}},
+			{ "ssh://host.xz:1/path/to/repo.git/", GitURL{
+				Hostname: "host.xz",
+				Path: "path/to/repo",
+			}},
 			{ "ssh://user@host.xz/path/to/repo.git/", GitURL{
 				Hostname: "host.xz",
-				Path:     "/path/to/repo",
+				Path:     "path/to/repo",
 				Username: "user",
 			}},
-			//{ "ssh://user@host.xz/path/to/repo.git/",
-			//{ "ssh://user@host.xz/~/path/to/repo.git",
-			//{ "ssh://user@host.xz/~user/path/to/repo.git/",
-			//{ "ssh://user@host.xz:port/path/to/repo.git/",
+			{ "ssh://user@host.xz/path/to/repo.git/", GitURL{
+				Hostname: "host.xz",
+				Path:     "path/to/repo",
+				Username: "user",
+			}},
+			{ "ssh://user@host.xz/~/path/to/repo.git", GitURL{
+				Hostname: "host.xz",
+				Path:     "~/path/to/repo",
+				Username: "user",
+			}},
+			{ "ssh://user@host.xz/~user/path/to/repo.git/", GitURL{
+				Hostname: "host.xz",
+				Path:     "~user/path/to/repo",
+				Username: "user",
+			}},
+			{ "ssh://user@host.xz:1/path/to/repo.git/", GitURL{
+				Hostname: "host.xz",
+				Path:     "path/to/repo",
+				Username: "user",
+			}},
+			{ "ssh://user@some.crazy.domain.net.au:1/path/to/repo.git/", GitURL{
+				Hostname: "some.crazy.domain.net.au",
+				Path:     "path/to/repo",
+				Username: "user",
+			}},
+			{ "ssh://user@some.crazy.domain.net.au:1/a.git", GitURL{
+				Hostname: "some.crazy.domain.net.au",
+				Path:     "a",
+				Username: "user",
+			}},
 		}
 
 		for _, tc := range testcases {
 			gu := parseSSH(tc.input)
+			require.NotNil(t, gu, tc.input)
 
 			assert.Equal(t, gu.Username, tc.output.Username)
 			assert.Equal(t, gu.Hostname, tc.output.Hostname)
 			assert.Equal(t, gu.Path, tc.output.Path)
+		}
+	})
+}
+
+func TestIllegalParsing(t *testing.T) {
+
+	t.Run("ssh", func(t *testing.T) {
+
+		testcases := []string{
+			"ssh://host./path/to/repo.git/",
+			"ssh:://host.xz/~user/path/to/repo.git/",
+			"ssh://host.xz:port/path/to/repo.git/",
+			"ssh://@host.xz/path/to/repo.git/",
+			"ssh://user@user@host.xz/path/to/repo.git/",
+			"ssh://user@.xz/~/path/to/repo.git",
+			"ssh://user@./~user/path/to/repo.git/",
+			"ssh://@user@host.xz:1/path/to/repo.git/",
+			"ssh://user@some.crazy.domain.net.au@:1/path/to/repo.git/",
+			"ssh:/user@some.crazy.domain.net.au:1/a.git",
+		}
+
+		for _, tc := range testcases {
+			gu := parseSSH(tc)
+			require.Nil(t, gu, tc)
 		}
 	})
 }
