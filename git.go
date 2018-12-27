@@ -63,10 +63,12 @@ func init() {
 			regexp.MustCompile(`^http(s)?://(` + username + `:.+@)?` + domain +  port + `/` + path + `$`),
 			parseHTTP,
 		},
+		/* Unsupported until we have better test data
 		URLTypeFTP: {
 			regexp.MustCompile(`^ftp(s)?://` + domain + port + `/` + path + `$`),
 			parseFTP,
 		},
+		*/
 		URLTypeSCP: {
 			regexp.MustCompile(`^(` + username + `@)` + domain + `:` + path + `$`),
 			parseSCP,
@@ -103,11 +105,37 @@ func parseSSH(url string) (*GitURL) {
 }
 
 func parseGit(url string) (*GitURL) {
-	return nil
+	r := expressions[URLTypeGit].Regexp
+	matches := r.FindStringSubmatch(url)
+	if matches == nil {
+		return nil
+	}
+	if len(matches) < 6{
+		return nil
+	}
+	return &GitURL{
+		Username: matches[2],
+		Hostname: matches[3],
+		Path: matches[7],
+		Type: URLTypeGit,
+	}
 }
 
 func parseHTTP(url string) (*GitURL) {
-	return nil
+	r := expressions[URLTypeHTTP].Regexp
+	matches := r.FindStringSubmatch(url)
+	if matches == nil {
+		return nil
+	}
+	if len(matches) < 6{
+		return nil
+	}
+	return &GitURL{
+		Username: matches[3],
+		Hostname: matches[4],
+		Path: matches[8],
+		Type: URLTypeHTTP,
+	}
 }
 
 func parseFTP(url string) (*GitURL) {

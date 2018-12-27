@@ -8,8 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func assertURLType(t *testing.T, expected URLType, actual URLType, url string) {
-	assert.True(t, expected == actual, fmt.Sprintf("Expected %s but received %s from %q", expected, actual, url))
+func assertURLType(t *testing.T, expected URLType, actual *GitURL, url string) {
+	require.NotNil(t, actual, fmt.Sprintf("Expected %s but received %+v from %q", expected, actual, url))
+	assert.True(t, expected == actual.Type, fmt.Sprintf("Expected %s but received %s from %q", expected, actual.Type, url))
 }
 
 func TestGitURL(t *testing.T) {
@@ -29,7 +30,7 @@ func TestGitURL(t *testing.T) {
 		for _, tc := range testcases {
 			gu, err := NewGitURL(tc)
 			require.NoError(t, err, tc)
-			assertURLType(t, URLTypeGit, gu.Type, tc)
+			assertURLType(t, URLTypeGit, gu, tc)
 		}
 	})
 
@@ -51,7 +52,7 @@ func TestGitURL(t *testing.T) {
 		for _, tc := range testcases {
 			gu, err := NewGitURL(tc)
 			require.NoError(t, err, tc)
-			assertURLType(t, URLTypeHTTP, gu.Type, tc)
+			assertURLType(t, URLTypeHTTP, gu, tc)
 		}
 	})
 
@@ -71,7 +72,7 @@ func TestGitURL(t *testing.T) {
 		for _, tc := range testcases {
 			gu, err := NewGitURL(tc)
 			require.NoError(t, err)
-			assertURLType(t, URLTypeSCP, gu.Type, tc)
+			assertURLType(t, URLTypeSCP, gu, tc)
 		}
 	})
 
@@ -93,7 +94,7 @@ func TestGitURL(t *testing.T) {
 		for _, tc := range testcases {
 			gu, err := NewGitURL(tc)
 			require.NoError(t, err, tc)
-			assertURLType(t, URLTypeSSH, gu.Type, tc)
+			assertURLType(t, URLTypeSSH, gu, tc)
 		}
 	})
 }
@@ -170,6 +171,77 @@ func TestLegalParsing(t *testing.T) {
 			assert.Equal(t, gu.Username, tc.output.Username)
 			assert.Equal(t, gu.Hostname, tc.output.Hostname)
 			assert.Equal(t, gu.Path, tc.output.Path)
+		}
+	})
+
+	t.Run("http", func(t *testing.T) {
+
+		testcases := []struct{
+			input string
+			output GitURL
+		}{
+			{"https://github.com/kubernetes/kubernetes.git", GitURL{
+				Hostname: "github.com",
+				Path: "kubernetes/kubernetes",
+				Type: URLTypeHTTP,
+			}},
+			{"http://192.168.101.127/user/project.git", GitURL{
+				Hostname: "192.168.101.127",
+				Path: "user/project",
+				Type: URLTypeHTTP,
+			}},
+			{"http://github.com/user/project.git", GitURL{
+				Hostname: "github.com",
+				Path: "user/project",
+				Type: URLTypeHTTP,
+			}},
+			{"http://host.xz/path/to/repo.git/", GitURL{
+				Hostname: "host.xz",
+				Path: "path/to/repo",
+				Type: URLTypeHTTP,
+			}},
+			{"https://192.168.101.127/user/project.git", GitURL{
+				Hostname: "192.168.101.127",
+				Path: "user/project",
+				Type: URLTypeHTTP,
+			}},
+			{"https://github.com/user/project.git", GitURL{
+				Hostname: "github.com",
+				Path: "user/project",
+				Type: URLTypeHTTP,
+			}},
+			{"https://host.xz/path/to/repo.git/", GitURL{
+				Hostname: "host.xz",
+				Path: "path/to/repo",
+				Type: URLTypeHTTP,
+			}},
+			{"https://username::;*%$:@github.com/username/repository.git", GitURL{
+				Hostname: "github.com",
+				Path: "username/repository",
+				Type: URLTypeHTTP,
+				Username: "username",
+			}},
+			{"https://username:$fooABC@:@github.com/username/repository.git", GitURL{
+				Hostname: "github.com",
+				Path: "username/repository",
+				Type: URLTypeHTTP,
+				Username: "username",
+			}},
+			{"https://username:password@github.com/username/repository.git", GitURL{
+				Hostname: "github.com",
+				Path: "username/repository",
+				Type: URLTypeHTTP,
+				Username: "username",
+			}},
+		}
+
+		for _, tc := range testcases {
+			gu := parseHTTP(tc.input)
+			require.NotNil(t, gu, tc.input)
+
+			assert.Equal(t, tc.output.Username, gu.Username, tc.input)
+			assert.Equal(t, tc.output.Hostname, gu.Hostname, tc.input)
+			assert.Equal(t, tc.output.Path, gu.Path, tc.input)
 		}
 	})
 }
