@@ -34,7 +34,7 @@ func TestGitURL(t *testing.T) {
 		}
 	})
 
-	t.Run("https", func(t *testing.T) {
+	t.Run("http", func(t *testing.T) {
 
 		testcases := []string{
 			"https://github.com/kubernetes/kubernetes.git",
@@ -64,8 +64,6 @@ func TestGitURL(t *testing.T) {
 			"git@192.168.101.127:user/project.git",
 			"git@github.com:user/project.git",
 			"git@github.com:user/some-project.git",
-			"git@github.com:user/some-project.git",
-			"git@github.com:user/some_project.git",
 			"git@github.com:user/some_project.git",
 		}
 
@@ -237,6 +235,54 @@ func TestLegalParsing(t *testing.T) {
 
 		for _, tc := range testcases {
 			gu := parseHTTP(tc.input)
+			require.NotNil(t, gu, tc.input)
+
+			assert.Equal(t, tc.output.Username, gu.Username, tc.input)
+			assert.Equal(t, tc.output.Hostname, gu.Hostname, tc.input)
+			assert.Equal(t, tc.output.Path, gu.Path, tc.input)
+		}
+	})
+
+	t.Run("scp", func(t *testing.T) {
+
+		testcases := []struct{
+			input string
+			output GitURL
+		}{
+			{"git@github.com:kubernetes/kubernetes.git", GitURL{
+				Hostname: "github.com",
+				Username: "git",
+				Path: "kubernetes/kubernetes",
+			}},
+			{"git@gitlab.com:facebook/react.git", GitURL{
+				Hostname: "gitlab.com",
+				Username: "git",
+				Path: "facebook/react",
+			}},
+			{"git@192.168.101.127:user/project.git", GitURL{
+				Hostname: "192.168.101.127",
+				Username: "git",
+				Path: "user/project",
+			}},
+			{"git@github.com:user/project.git", GitURL{
+				Hostname: "github.com",
+				Username: "git",
+				Path: "user/project",
+			}},
+			{"git@github.com:user/some-project.git", GitURL{
+				Hostname: "github.com",
+				Username: "git",
+				Path: "user/some-project",
+			}},
+			{"git@github.com:user/some_project.git", GitURL{
+				Hostname: "github.com",
+				Username: "git",
+				Path: "user/some_project",
+			}},
+		}
+
+		for _, tc := range testcases {
+			gu := parseSCP(tc.input)
 			require.NotNil(t, gu, tc.input)
 
 			assert.Equal(t, tc.output.Username, gu.Username, tc.input)

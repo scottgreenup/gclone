@@ -138,10 +138,25 @@ func parseHTTP(url string) (*GitURL) {
 	}
 }
 
+/*
 func parseFTP(url string) (*GitURL) {
 	return nil
 }
+*/
 
 func parseSCP(url string) (*GitURL) {
-	return nil
+	r := expressions[URLTypeSCP].Regexp
+	matches := r.FindStringSubmatch(url)
+	if matches == nil {
+		return nil
+	}
+	if len(matches) < 6{
+		return nil
+	}
+	return &GitURL{
+		Username: matches[2],
+		Hostname: matches[3],
+		Path: matches[6],
+		Type: URLTypeSCP,
+	}
 }
