@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/pkg/errors"
 	"regexp"
-	"strings"
 )
 
 type URLType string
@@ -37,37 +36,58 @@ type GitURL struct {
 var expressions map[URLType]*regexp.Regexp
 
 func init() {
+
+	username := `(?P<username>\w+)`
+	domain := `(?P<hostname>(\w+)(\.\w+)*)`
+	port := `(?P<port>:[0-9]+)?`
+	path := `(?P<path>(.+/)*(.+)).git(/)?`
+
 	expressions = map[URLType]*regexp.Regexp{
-		URLTypeSSH:   regexp.MustCompile(`^ssh://(.+@)?([\w\.]+)(:[0-9]+)?(/.+)+.git(/)?$`),
-		URLTypeGit:   regexp.MustCompile(`^git://([\w\.]+)(:[0-9]+)?(/.+)+.git(/|#.+)?$`),
-		URLTypeHTTP:  regexp.MustCompile(`^http(s)?://([\w]+:.+@)?([\w\.]+)(:[0-9]+)?(/.+)+.git(/)?$`),
-		URLTypeFTP:   regexp.MustCompile(`^ftp(s)?://([\w\.]+)(:[0-9]+)?(/.+)+.git(/)?$`),
-		URLTypeSCP:   regexp.MustCompile(`^(\w+@)([\w\.]+):(.+)(/.+)*.git(/)?$`),
+		URLTypeSSH:  regexp.MustCompile(`^ssh://(` + username + `@)?` + domain + port + `/` + path + `$`),
+		URLTypeGit:  regexp.MustCompile(`^git://` + domain + port + `/` + path + `(#.+)?$`),
+		URLTypeHTTP: regexp.MustCompile(`^http(s)?://(` + username + `:.+@)?` + domain +  port + `/` + path + `$`),
+		URLTypeSCP:  regexp.MustCompile(`^(` + username + `@)` + domain + `:` + path + `$`),
 	}
+	/* Unsupported until we have better test data
+	URLTypeFTP: regexp.MustCompile(`^ftp(s)?://` + domain + port + `/` + path + `$`),
+	*/
 
 }
 
 func NewGitURL(url string) (*GitURL, error) {
-	for k, expr := range expressions {
+	for t, expr := range expressions {
 		if expr.MatchString(url) {
-			return &GitURL{
-				Type: k,
-			}, nil
+			return parse(url, t), nil
 		}
 	}
 
 	return nil, errors.New("unable to determine type of URL")
 }
 
-func parseSSH(url string) (*GitURL) {
-	r := expressions[URLTypeSSH]
-	if !r.MatchString(url) {
-		return &GitURL{}
-	}
+func find(url string, r *regexp.Regexp) map[string]string {
 	matches := r.FindStringSubmatch(url)
+	if matches == nil {
+		return nil
+	}
+	result := make(map[string]string)
+	for i, name := range r.SubexpNames() {
+		if i != 0 && name != "" {
+			result[name] = matches[i]
+		}
+	}
+	return result
+}
+
+func parse(url string, t URLType) *GitURL {
+	matches := find(url, expressions[t])
+	if matches == nil {
+		return nil
+	}
 	return &GitURL{
-		Username: strings.TrimSuffix(matches[1], "@"),
-		Hostname: matches[2],
-		Path: matches[4],
+		Username: matches["username"],
+		Hostname: matches["hostname"],
+		Path: matches["path"],
+		Port: matches["port"],
+		Type: t,
 	}
 }
