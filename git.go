@@ -33,130 +33,61 @@ type GitURL struct {
 	Type URLType
 }
 
-var expressions map[URLType]struct{
-	*regexp.Regexp
-	parser
-}
-
-type parser func(url string) (*GitURL)
+var expressions map[URLType]*regexp.Regexp
 
 func init() {
 
-	username := `(\w+)`
-	domain := `((\w+)(\.\w+)*)`
-	port := `(:[0-9]+)?`
-	path := `((.+/)*(.+)).git(/)?`
+	username := `(?P<username>\w+)`
+	domain := `(?P<hostname>(\w+)(\.\w+)*)`
+	port := `(?P<port>:[0-9]+)?`
+	path := `(?P<path>(.+/)*(.+)).git(/)?`
 
-	expressions = map[URLType]struct{
-		*regexp.Regexp
-		parser
-	}{
-		URLTypeSSH: {
-			regexp.MustCompile(`^ssh://(` + username + `@)?` + domain + port + `/` + path + `$`),
-			parseSSH,
-		},
-		URLTypeGit: {
-			regexp.MustCompile(`^git://` + domain + port + `/` + path + `(#.+)?$`),
-			parseGit,
-		},
-		URLTypeHTTP: {
-			regexp.MustCompile(`^http(s)?://(` + username + `:.+@)?` + domain +  port + `/` + path + `$`),
-			parseHTTP,
-		},
-		/* Unsupported until we have better test data
-		URLTypeFTP: {
-			regexp.MustCompile(`^ftp(s)?://` + domain + port + `/` + path + `$`),
-			parseFTP,
-		},
-		*/
-		URLTypeSCP: {
-			regexp.MustCompile(`^(` + username + `@)` + domain + `:` + path + `$`),
-			parseSCP,
-		},
+	expressions = map[URLType]*regexp.Regexp{
+		URLTypeSSH:  regexp.MustCompile(`^ssh://(` + username + `@)?` + domain + port + `/` + path + `$`),
+		URLTypeGit:  regexp.MustCompile(`^git://` + domain + port + `/` + path + `(#.+)?$`),
+		URLTypeHTTP: regexp.MustCompile(`^http(s)?://(` + username + `:.+@)?` + domain +  port + `/` + path + `$`),
+		URLTypeSCP:  regexp.MustCompile(`^(` + username + `@)` + domain + `:` + path + `$`),
 	}
+	/* Unsupported until we have better test data
+	URLTypeFTP: regexp.MustCompile(`^ftp(s)?://` + domain + port + `/` + path + `$`),
+	*/
 
 }
 
 func NewGitURL(url string) (*GitURL, error) {
-	for _, expr := range expressions {
-		if expr.Regexp.MatchString(url) {
-			return expr.parser(url), nil
+	for t, expr := range expressions {
+		if expr.MatchString(url) {
+			return parse(url, t), nil
 		}
 	}
 
 	return nil, errors.New("unable to determine type of URL")
 }
 
-func parseSSH(url string) (*GitURL) {
-	r := expressions[URLTypeSSH].Regexp
+func find(url string, r *regexp.Regexp) map[string]string {
 	matches := r.FindStringSubmatch(url)
 	if matches == nil {
 		return nil
 	}
-	if len(matches) < 6{
-		return nil
+	result := make(map[string]string)
+	for i, name := range r.SubexpNames() {
+		if i != 0 && name != "" {
+			result[name] = matches[i]
+		}
 	}
-	return &GitURL{
-		Username: matches[2],
-		Hostname: matches[3],
-		Path: matches[7],
-		Type: URLTypeSSH,
-	}
+	return result
 }
 
-func parseGit(url string) (*GitURL) {
-	r := expressions[URLTypeGit].Regexp
-	matches := r.FindStringSubmatch(url)
+func parse(url string, t URLType) *GitURL {
+	matches := find(url, expressions[t])
 	if matches == nil {
 		return nil
 	}
-	if len(matches) < 6{
-		return nil
-	}
 	return &GitURL{
-		Username: matches[2],
-		Hostname: matches[3],
-		Path: matches[7],
-		Type: URLTypeGit,
-	}
-}
-
-func parseHTTP(url string) (*GitURL) {
-	r := expressions[URLTypeHTTP].Regexp
-	matches := r.FindStringSubmatch(url)
-	if matches == nil {
-		return nil
-	}
-	if len(matches) < 6{
-		return nil
-	}
-	return &GitURL{
-		Username: matches[3],
-		Hostname: matches[4],
-		Path: matches[8],
-		Type: URLTypeHTTP,
-	}
-}
-
-/*
-func parseFTP(url string) (*GitURL) {
-	return nil
-}
-*/
-
-func parseSCP(url string) (*GitURL) {
-	r := expressions[URLTypeSCP].Regexp
-	matches := r.FindStringSubmatch(url)
-	if matches == nil {
-		return nil
-	}
-	if len(matches) < 6{
-		return nil
-	}
-	return &GitURL{
-		Username: matches[2],
-		Hostname: matches[3],
-		Path: matches[6],
-		Type: URLTypeSCP,
+		Username: matches["username"],
+		Hostname: matches["hostname"],
+		Path: matches["path"],
+		Port: matches["port"],
+		Type: t,
 	}
 }

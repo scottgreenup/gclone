@@ -163,12 +163,13 @@ func TestLegalParsing(t *testing.T) {
 		}
 
 		for _, tc := range testcases {
-			gu := parseSSH(tc.input)
+			gu := parse(tc.input, URLTypeSSH)
 			require.NotNil(t, gu, tc.input)
 
-			assert.Equal(t, gu.Username, tc.output.Username)
-			assert.Equal(t, gu.Hostname, tc.output.Hostname)
-			assert.Equal(t, gu.Path, tc.output.Path)
+			assert.Equal(t, tc.output.Username, gu.Username)
+			assert.Equal(t, tc.output.Hostname, gu.Hostname)
+			assert.Equal(t, tc.output.Path, gu.Path)
+			assert.Equal(t, URLTypeSSH, gu.Type)
 		}
 	})
 
@@ -234,12 +235,13 @@ func TestLegalParsing(t *testing.T) {
 		}
 
 		for _, tc := range testcases {
-			gu := parseHTTP(tc.input)
+			gu := parse(tc.input, URLTypeHTTP)
 			require.NotNil(t, gu, tc.input)
 
 			assert.Equal(t, tc.output.Username, gu.Username, tc.input)
 			assert.Equal(t, tc.output.Hostname, gu.Hostname, tc.input)
 			assert.Equal(t, tc.output.Path, gu.Path, tc.input)
+			assert.Equal(t, URLTypeHTTP, gu.Type, tc.input)
 		}
 	})
 
@@ -282,7 +284,7 @@ func TestLegalParsing(t *testing.T) {
 		}
 
 		for _, tc := range testcases {
-			gu := parseSCP(tc.input)
+			gu := parse(tc.input, URLTypeSCP)
 			require.NotNil(t, gu, tc.input)
 
 			assert.Equal(t, tc.output.Username, gu.Username, tc.input)
@@ -310,7 +312,7 @@ func TestIllegalParsing(t *testing.T) {
 		}
 
 		for _, tc := range testcases {
-			gu := parseSSH(tc)
+			gu := parse(tc, URLTypeSSH)
 			require.Nil(t, gu, tc)
 		}
 	})
