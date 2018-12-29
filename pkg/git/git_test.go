@@ -1,4 +1,4 @@
-package main
+package git
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ func TestGitURL(t *testing.T) {
 		}
 
 		for _, tc := range testcases {
-			gu, err := NewGitURL(tc)
+			gu, err := NewURL(tc)
 			require.NoError(t, err, tc)
 			assertURLType(t, URLTypeGit, gu, tc)
 		}
@@ -50,7 +50,7 @@ func TestGitURL(t *testing.T) {
 		}
 
 		for _, tc := range testcases {
-			gu, err := NewGitURL(tc)
+			gu, err := NewURL(tc)
 			require.NoError(t, err, tc)
 			assertURLType(t, URLTypeHTTP, gu, tc)
 		}
@@ -68,7 +68,7 @@ func TestGitURL(t *testing.T) {
 		}
 
 		for _, tc := range testcases {
-			gu, err := NewGitURL(tc)
+			gu, err := NewURL(tc)
 			require.NoError(t, err)
 			assertURLType(t, URLTypeSCP, gu, tc)
 		}
@@ -90,7 +90,7 @@ func TestGitURL(t *testing.T) {
 		}
 
 		for _, tc := range testcases {
-			gu, err := NewGitURL(tc)
+			gu, err := NewURL(tc)
 			require.NoError(t, err, tc)
 			assertURLType(t, URLTypeSSH, gu, tc)
 		}

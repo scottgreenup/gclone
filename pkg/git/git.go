@@ -1,4 +1,4 @@
-package main
+package git
 
 import (
 	"github.com/pkg/errors"
@@ -54,7 +54,7 @@ func init() {
 
 }
 
-func NewGitURL(url string) (*GitURL, error) {
+func NewURL(url string) (*GitURL, error) {
 	for t, expr := range expressions {
 		if expr.MatchString(url) {
 			return parse(url, t), nil
