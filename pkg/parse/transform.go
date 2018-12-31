@@ -24,7 +24,6 @@ type Error string
 
 func (e Error) Error() string {
 	return string(e)
-
 }
 
 const (
@@ -37,7 +36,6 @@ func Transform(args []string, config TransformConfig) ([]string, error) {
 	flags := false
 
 	for _, arg := range args {
-
 		if strings.HasPrefix(arg, "-") {
 			flags = true
 		}
@@ -55,10 +53,6 @@ func Transform(args []string, config TransformConfig) ([]string, error) {
 
 	switch len(ourArgs) {
 	case 1:
-		// if args == 1 then we treat it as a repo
-		//      parse repo
-		//      mkdir -p the auto-generated dir
-		//      git clone with repo and AGD
 		repo := ourArgs[0]
 		gu, err := git.NewURL(repo)
 		if err != nil {
@@ -76,10 +70,6 @@ func Transform(args []string, config TransformConfig) ([]string, error) {
 		return result, nil
 
 	case 2:
-		// if args == 2 then repo and directory
-		//      mkdir -p the directory
-		//      call git clone with repo and directory
-		//      if it fails, kill the directory
 		repo := ourArgs[0]
 		path := ourArgs[1]
 		expandedPath, expandErr := homedir.Expand(path)
