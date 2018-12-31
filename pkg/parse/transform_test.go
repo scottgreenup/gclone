@@ -1,7 +1,6 @@
 package parse
 
 import (
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -25,10 +24,7 @@ func TestTransform(t *testing.T) {
 		config := DefaultTransformConfig()
 		gitArgs, err := doTransform("https://github.com/kubernetes/kubernetes.git", config)
 		require.NoError(t, err)
-		assert.Equal(t, []string{
-			"https://github.com/kubernetes/kubernetes.git",
-			filepath.Join(config.DefaultDirectory, "github.com/kubernetes/kubernetes"),
-		}, gitArgs)
+		assert.True(t, strings.HasSuffix(gitArgs[len(gitArgs)-1], "github.com/kubernetes/kubernetes"))
 	})
 
 	t.Run("both", func(t *testing.T) {
@@ -43,7 +39,7 @@ func TestTransform(t *testing.T) {
 
 	t.Run("both with flags", func(t *testing.T) {
 		config := DefaultTransformConfig()
-		gitArgs, err := doTransform("--depth 1 https://github.com/kubernetes/kubernetes.git -q someDir --no-tags", config)
+		gitArgs, err := doTransform("https://github.com/kubernetes/kubernetes.git someDir -- -q --something --no-tags", config)
 		require.NoError(t, err)
 		assert.Equal(t, []string{
 			"--depth",
@@ -54,4 +50,11 @@ func TestTransform(t *testing.T) {
 			"someDir",
 		}, gitArgs)
 	})
+
+	t.Run("flags before", func(t *testing.T) {
+		config := DefaultTransformConfig()
+		_, err := doTransform("--something https://github.com/kubernetes/kubernetes.git someDir -- -q --something --no-tags", config)
+		require.Error(t, err)
+	})
+}
 }
