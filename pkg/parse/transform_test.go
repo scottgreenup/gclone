@@ -39,12 +39,11 @@ func TestTransform(t *testing.T) {
 
 	t.Run("both with flags", func(t *testing.T) {
 		config := DefaultTransformConfig()
-		gitArgs, err := doTransform("https://github.com/kubernetes/kubernetes.git someDir -- -q --something --no-tags", config)
+		gitArgs, err := doTransform("https://github.com/kubernetes/kubernetes.git someDir -q --something --no-tags", config)
 		require.NoError(t, err)
 		assert.Equal(t, []string{
-			"--depth",
-			"1",
 			"-q",
+			"--something",
 			"--no-tags",
 			"https://github.com/kubernetes/kubernetes.git",
 			"someDir",
@@ -56,5 +55,4 @@ func TestTransform(t *testing.T) {
 		_, err := doTransform("--something https://github.com/kubernetes/kubernetes.git someDir -- -q --something --no-tags", config)
 		require.Error(t, err)
 	})
-}
 }
