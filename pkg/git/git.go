@@ -1,8 +1,9 @@
-package main
+package git
 
 import (
-	"github.com/pkg/errors"
 	"regexp"
+
+	"github.com/pkg/errors"
 )
 
 type URLType string
@@ -45,7 +46,7 @@ func init() {
 	expressions = map[URLType]*regexp.Regexp{
 		URLTypeSSH:  regexp.MustCompile(`^ssh://(` + username + `@)?` + domain + port + `/` + path + `$`),
 		URLTypeGit:  regexp.MustCompile(`^git://` + domain + port + `/` + path + `(#.+)?$`),
-		URLTypeHTTP: regexp.MustCompile(`^http(s)?://(` + username + `:.+@)?` + domain +  port + `/` + path + `$`),
+		URLTypeHTTP: regexp.MustCompile(`^http(s)?://(` + username + `:.+@)?` + domain + port + `/` + path + `$`),
 		URLTypeSCP:  regexp.MustCompile(`^(` + username + `@)` + domain + `:` + path + `$`),
 	}
 	/* Unsupported until we have better test data
@@ -54,7 +55,7 @@ func init() {
 
 }
 
-func NewGitURL(url string) (*GitURL, error) {
+func NewURL(url string) (*GitURL, error) {
 	for t, expr := range expressions {
 		if expr.MatchString(url) {
 			return parse(url, t), nil
@@ -86,8 +87,8 @@ func parse(url string, t URLType) *GitURL {
 	return &GitURL{
 		Username: matches["username"],
 		Hostname: matches["hostname"],
-		Path: matches["path"],
-		Port: matches["port"],
-		Type: t,
+		Path:     matches["path"],
+		Port:     matches["port"],
+		Type:     t,
 	}
 }
