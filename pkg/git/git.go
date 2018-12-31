@@ -12,7 +12,6 @@ const (
 	URLTypeSSH  URLType = "ssh"
 	URLTypeGit  URLType = "git"
 	URLTypeHTTP URLType = "http"
-	URLTypeFTP  URLType = "ftp"
 	URLTypeSCP  URLType = "scp"
 )
 
@@ -37,7 +36,6 @@ type GitURL struct {
 var expressions map[URLType]*regexp.Regexp
 
 func init() {
-
 	username := `(?P<username>\w+)`
 	domain := `(?P<hostname>(\w+)(\.\w+)*)`
 	port := `(?P<port>:[0-9]+)?`
@@ -49,10 +47,6 @@ func init() {
 		URLTypeHTTP: regexp.MustCompile(`^http(s)?://(` + username + `:.+@)?` + domain + port + `/` + path + `$`),
 		URLTypeSCP:  regexp.MustCompile(`^(` + username + `@)` + domain + `:` + path + `$`),
 	}
-	/* Unsupported until we have better test data
-	URLTypeFTP: regexp.MustCompile(`^ftp(s)?://` + domain + port + `/` + path + `$`),
-	*/
-
 }
 
 func NewURL(url string) (*GitURL, error) {
