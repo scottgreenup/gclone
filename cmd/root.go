@@ -7,13 +7,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/scottgreenup/gclone/pkg/parse"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
-
-var cfgFile string
 
 var rootCmd = &cobra.Command{
 	Use:   "gclone",
@@ -21,7 +18,13 @@ var rootCmd = &cobra.Command{
 	Long: `A drop in replacement for git clone that allows for configuring the automatic organising of repositories that
 are cloned.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		gitArgs, err := parse.Transform(args, parse.DefaultTransformConfig())
+
+		transformConfig := parse.DefaultTransformConfig()
+		if s := viper.GetString("DefaultDirectory"); s != "" {
+			transformConfig.DefaultDirectory = s
+		}
+
+		gitArgs, err := parse.Transform(args, transformConfig)
 
 		if err != nil {
 			if err == parse.TransformErrorBadUsage {
@@ -86,20 +89,11 @@ func init() {
 }
 
 func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".gclone")
-	}
-
+	viper.AddConfigPath("$HOME/.config/gclone")
+	viper.AddConfigPath("/etc/gclone")
+	viper.SetConfigName("config")
 	viper.AutomaticEnv()
+
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file: ", viper.ConfigFileUsed())
 	}
