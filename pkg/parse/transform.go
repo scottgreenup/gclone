@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/scottgreenup/gclone/pkg/git"
@@ -32,17 +33,16 @@ const (
 
 func Transform(args []string, config TransformConfig) ([]string, error) {
 	gitArgs := make([]string, 0, len(args))
-	doubleDash := false
-
 	ourArgs := make([]string, 0, 2)
+	flags := false
 
 	for _, arg := range args {
-		if arg == "--" {
-			doubleDash = true
-			continue
-		} else if arg == "--help" || arg == "-h" {
-			return nil, TransformErrorBadUsage
-		} else if doubleDash {
+
+		if strings.HasPrefix(arg, "-") {
+			flags = true
+		}
+
+		if flags {
 			gitArgs = append(gitArgs, arg)
 		} else {
 			ourArgs = append(ourArgs, arg)
