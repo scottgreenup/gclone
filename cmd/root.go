@@ -24,7 +24,7 @@ are cloned.`,
 			transformConfig.DefaultDirectory = s
 		}
 
-		gitArgs, err := parse.Transform(args, transformConfig)
+		result, err := parse.Transform(args, transformConfig)
 
 		if err != nil {
 			if err == parse.TransformErrorBadUsage {
@@ -35,6 +35,8 @@ are cloned.`,
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
+		gitArgs := result.GitArgs
 
 		fmt.Printf("git clone %s\n", strings.Join(gitArgs, " "))
 
@@ -74,6 +76,9 @@ are cloned.`,
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
+
+		fmt.Printf("\n%s\n", result.TargetDirectoryPath)
+
 	},
 }
 

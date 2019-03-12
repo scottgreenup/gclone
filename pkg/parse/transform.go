@@ -30,7 +30,12 @@ const (
 	TransformErrorBadUsage Error = "BadUsage"
 )
 
-func Transform(args []string, config TransformConfig) ([]string, error) {
+type TransformResult struct {
+	GitArgs             []string
+	TargetDirectoryPath string
+}
+
+func Transform(args []string, config TransformConfig) (*TransformResult, error) {
 	gitArgs := make([]string, 0, len(args))
 	ourArgs := make([]string, 0, 2)
 	flags := false
@@ -67,7 +72,10 @@ func Transform(args []string, config TransformConfig) ([]string, error) {
 		}
 		result := gitArgs[:]
 		result = append(result, repo, expandedPath)
-		return result, nil
+		return &TransformResult{
+			GitArgs: result,
+			TargetDirectoryPath: expandedPath,
+		}, nil
 
 	case 2:
 		repo := ourArgs[0]
@@ -78,7 +86,10 @@ func Transform(args []string, config TransformConfig) ([]string, error) {
 		}
 		result := gitArgs[:]
 		result = append(result, repo, expandedPath)
-		return result, nil
+		return &TransformResult{
+			GitArgs: result,
+			TargetDirectoryPath: expandedPath,
+		}, nil
 
 	default:
 		return nil, TransformErrorBadUsage
