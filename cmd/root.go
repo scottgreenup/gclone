@@ -91,12 +91,12 @@ are cloned.`,
 		resp, err := RootCommandRun(result)
 
 		if err != nil {
-			fmt.Println("%s", err.Error())
+			fmt.Printf("%s", err.Error())
 			os.Exit(1)
 		}
 
 		if err := json.NewEncoder(os.Stdout).Encode(resp); err != nil {
-			fmt.Println("%s", err.Error())
+			fmt.Printf("%s", err.Error())
 		}
 	},
 }
@@ -119,6 +119,6 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file: ", viper.ConfigFileUsed())
+		_, _ = fmt.Fprintln(os.Stderr, "Using config file: ", viper.ConfigFileUsed())
 	}
 }
