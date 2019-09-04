@@ -61,7 +61,7 @@ func Transform(args []string, config TransformConfig) (*TransformResult, error) 
 		repo := ourArgs[0]
 		gu, err := git.NewURL(repo)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 		// TODO normalise, spaces to -, etc...
