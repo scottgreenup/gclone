@@ -38,14 +38,14 @@ type TransformResult struct {
 func Transform(args []string, config TransformConfig) (*TransformResult, error) {
 	gitArgs := make([]string, 0, len(args))
 	ourArgs := make([]string, 0, 2)
-	flags := false
 
+	processingGitArgs := false
 	for _, arg := range args {
 		if strings.HasPrefix(arg, "-") {
-			flags = true
+			processingGitArgs = true
 		}
 
-		if flags {
+		if processingGitArgs {
 			gitArgs = append(gitArgs, arg)
 		} else {
 			ourArgs = append(ourArgs, arg)
