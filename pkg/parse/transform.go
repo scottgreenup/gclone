@@ -12,11 +12,13 @@ import (
 
 type TransformConfig struct {
 	DefaultDirectory string
+	FailOnExisting   bool
 }
 
 func DefaultTransformConfig() TransformConfig {
 	return TransformConfig{
 		DefaultDirectory: "~/code",
+		FailOnExisting:   false,
 	}
 }
 
@@ -52,6 +54,10 @@ func Transform(args []string, config TransformConfig) (*TransformResult, error) 
 		}
 	}
 
+	// TODO: Do this using cobra?
+	// We're expecting 1 or 2 arguments.
+	//  ourArgs[0] should be repo
+	//  ourArgs[1] should be path
 	if len(ourArgs) == 0 || len(ourArgs) > 2 {
 		return nil, TransformErrorBadUsage
 	}
@@ -73,7 +79,7 @@ func Transform(args []string, config TransformConfig) (*TransformResult, error) 
 		result := gitArgs[:]
 		result = append(result, repo, expandedPath)
 		return &TransformResult{
-			GitArgs: result,
+			GitArgs:             result,
 			TargetDirectoryPath: expandedPath,
 		}, nil
 
@@ -87,7 +93,7 @@ func Transform(args []string, config TransformConfig) (*TransformResult, error) 
 		result := gitArgs[:]
 		result = append(result, repo, expandedPath)
 		return &TransformResult{
-			GitArgs: result,
+			GitArgs:             result,
 			TargetDirectoryPath: expandedPath,
 		}, nil
 

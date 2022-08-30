@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/scottgreenup/gclone/pkg/parse"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -68,11 +69,14 @@ var rootCmd = &cobra.Command{
 	Short: "An improved git cloning experience",
 	Long: `A drop in replacement for git clone that allows for configuring the automatic organising of repositories that
 are cloned.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		transformConfig := parse.DefaultTransformConfig()
 		if s := viper.GetString("DefaultDirectory"); s != "" {
 			transformConfig.DefaultDirectory = s
 		}
+
+		// TODO: How does the user discover this?
+		transformConfig.FailOnExisting = viper.GetBool("FailOnExisting")
 
 		result, err := parse.Transform(args, transformConfig)
 
@@ -84,20 +88,36 @@ are cloned.`,
 				os.Exit(1)
 			}
 
-			fmt.Println(err)
-			os.Exit(1)
+			return err
+		}
+
+		// The directory may already exist.
+		if fi, err := os.Stat(result.TargetDirectoryPath); err == nil {
+
+			if fi.IsDir() && transformConfig.FailOnExisting {
+				return errors.Errorf("%s already exists, can not clone to it", result.TargetDirectoryPath)
+			}
+
+			if fi.IsDir() {
+				resp := &RootCommandOutput{
+					TargetDirectory: result.TargetDirectoryPath,
+				}
+				if err := json.NewEncoder(os.Stdout).Encode(resp); err != nil {
+					return err
+				}
+				return nil
+			}
+
+			return err
 		}
 
 		resp, err := RootCommandRun(result)
 
 		if err != nil {
-			fmt.Printf("%s", err.Error())
-			os.Exit(1)
+			return err
 		}
 
-		if err := json.NewEncoder(os.Stdout).Encode(resp); err != nil {
-			fmt.Printf("%s", err.Error())
-		}
+		return json.NewEncoder(os.Stdout).Encode(resp)
 	},
 }
 
