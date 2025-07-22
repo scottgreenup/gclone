@@ -1,7 +1,15 @@
-# glcone
+# gclone
 
 Sick of having unorganised repositories? Tired of specifying the directory?
 Get `gclone` today!
+
+## Installation
+
+To get the latest version:
+
+```shell
+go install github.com/scottgreenup/gclone@latest
+```
 
 ## Example usage
 
